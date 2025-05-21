@@ -1,0 +1,75 @@
+@page "/"
+@inject BggService BggService
+@rendermode InteractiveServer
+
+<PageTitle>Random Board Game</PageTitle>
+
+<h1>Welcome to the Random Board Game Chooser</h1>
+
+<p>Fill out your criteria for a game and we will give you a recommendation.</p>
+
+<form method="get" @onsubmit="Submit" @formname="board-game-list-query">
+
+    <label for="username">Username:</label>
+    <input type="text" name="username" @bind-value="@username" />
+
+    <label for="playerCount">Number of Players:</label>
+    <input type="number" name="playerCount" @bind-value="@playerCount" />
+
+    <label for="ratedBoolean">Should we include games you've played before?</label>
+    <input type="checkbox" name="ratedBoolean" @bind-value="@hasBeenRated" checked="@hasBeenRated" />
+
+    <button type="submit">Submit</button>
+</form>
+
+@if (OwnedGames != null)
+{
+    <h2>Random Game</h2>
+    <p>Here's 5 to choose from.</p>
+    <div class="games-gallery">
+        @foreach (var game in RandomGames)
+        {
+            <div class="game">
+                <h3>@game.Name</h3>
+                <img src="@game.ThumbnailUrl" alt="@game.Name" />
+                <p>Plays in @game.PlayTime minutes.</p>
+            </div>
+        }
+    </div>
+
+    <h2>Full Collection</h2>
+    <div class="games-gallery">
+        @foreach (var game in OwnedGames)
+        {
+            <div class="game">
+                <h3>@game.Name</h3>
+                <img class="thumbnail" src="@game.ThumbnailUrl" alt="@game.Name" />
+                <p>Plays in @game.PlayTime minutes.</p>
+            </div>
+
+        }
+    </div>
+}
+
+@code {
+    private string username = "ForeverOOm14";
+
+    private int playerCount = 1;
+
+    private bool hasBeenRated = true;
+
+    private int numberToDisplay = 5;
+
+    private List<BoardGame>? OwnedGames;
+
+    private List<BoardGame>? RandomGames;
+
+    private async void Submit()
+    {
+        BoardGameQuery query = new BoardGameQuery(username, playerCount, hasBeenRated);
+        OwnedGames = await BggService.GetOwnedGamesAsync(query);
+
+        Random random = new Random();
+        RandomGames = OwnedGames.OrderBy(GameRandomizer => random.Next()).Take(numberToDisplay).ToList();
+    }
+}
